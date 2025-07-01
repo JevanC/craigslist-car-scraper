@@ -11,13 +11,16 @@ import time
 import random
 import loadenv
 import os
+from dotenv import load_dotenv
 
-gemini_key = os.getenv('GEMINI_API_KEY')
-raw_proxies = json.loads(os.getenv("PROXY_LIST", "[]"))
-header_pool = json.loads(os.getenv("HEADER_POOL_JSON", "[]"))
+load_dotenv()
 
 
-client = genai.Client(api_key=gemini_key)
+gemini_api   = os.getenv("GEMINI_API_KEY")
+raw_proxies  = json.loads(os.getenv("PROXY_LIST", "[]"))
+header_pool  = json.loads(os.getenv("HEADER_POOL_JSON", "[]"))
+
+client = genai.Client(api_key=gemini_api)
 
 
 proxy_pool = []
