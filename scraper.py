@@ -88,7 +88,8 @@ def extract_cylinder_count(text):
 
 
 count = 0
-while count < 1:
+limit = 1
+while count < limit:
     URL = f'https://sacramento.craigslist.org/search/cta?purveyor=owner#search=2~gallery~0'
     proxy  = random.choice(proxy_pool)
     headers = random.choice(header_pool)
@@ -101,6 +102,8 @@ while count < 1:
             print(f"We have now checked {count} cars")
             if check_repeat('cars.db', link):
                 print('REPEAT')
+                if count >= limit:
+                    break
                 continue
             conn = sqlite3.connect("cars.db")
             cursor = conn.cursor()
@@ -120,15 +123,21 @@ while count < 1:
             if title is None or title.lower() != 'clean':
                 print('NOT CLEAN TITLE')
                 print(link)
+                if count >= limit:
+                    break
                 continue
             price = safe_find_text(soup, 'span', class_='price').replace('$', '').replace(',', '')
 
             if not price.isdigit() or int(price) > 7000:
                 print('MORE THAN $7000')
+                if count >= limit:
+                    break
                 continue
 
             year = safe_find_text(soup.find('div', class_='attr important'), 'span', class_='valu year')
             if int(year) < 1992:
+                if count >= limit:
+                    break
                 continue
             price = int(price)
 
@@ -141,6 +150,8 @@ while count < 1:
             
             if not any(brand in makemodel.lower() for brand in ['toyota', 'honda', 'lexus']):
                 print('Not a Japanese Car')
+                if count >= limit:
+                    break
                 continue
             postingtitle = safe_find_text(soup, 'span', id_='titletextonly') 
             postingbody = safe_find_text(soup, 'section', id_='postingbody') 
@@ -218,3 +229,4 @@ while count < 1:
             print("ADDED TO DATABASE")
         except Exception as e:
             print(f"An error occurred: {e}")
+print("WE SEARCHED THROUGH {count} DIFFERENT CARS AND ARE NOW DONE")
