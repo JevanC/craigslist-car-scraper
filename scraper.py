@@ -6,13 +6,17 @@ import ast
 from google import genai
 import re
 import json
-import sqlite3
 import time
 import random
 import loadenv
 import os
 from dotenv import load_dotenv
+from models import Checked, Car
+from db import Session, init_db
+from datetime import datetime
 
+session = Session()
+init_db()
 load_dotenv()
 
 
@@ -29,46 +33,10 @@ for p in raw_proxies:
     proxy_url = f"http://{user}:{pwd}@{host}:{port}"
     proxy_pool.append({"http": proxy_url, "https": proxy_url})
 
-conn = sqlite3.connect("cars.db")
-cursor = conn.cursor()
 
+def check_repeat(session, url):
+    return session.query(Checked).filter_by(link=url).first() is not None
 
-cursor.execute("""
-    CREATE TABLE IF NOT EXISTS cars (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        make TEXT NOT NULL,
-        model TEXT,
-        trim TEXT,
-        miles INTEGER,
-        sell_price INTEGER,
-        claimed_condition TEXT,
-        excellent_pred INTEGER, 
-        very_good_pred INTEGER, 
-        good_pred INTEGER, 
-        fair_pred INTEGER,
-        link TEXT,
-        explanation TEXT,
-        mechanical_issues BOOLEAN
-    )
-    """)
-
-cursor.execute("""
-    CREATE TABLE IF NOT EXISTS checked (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        link TEXT
-    )
-    """)
-
-conn.commit()
-conn.close()
-
-def check_repeat(db_name, url):
-    conn = sqlite3.connect(db_name)
-    cursor = conn.cursor()
-    cursor.execute("SELECT link FROM checked")
-    links = [row[0] for row in cursor.fetchall()]
-    conn.close()
-    return url in links
     
 def safe_find_text(parent, tag, class_=None, id_=None, default=''):
     if parent:
@@ -100,20 +68,14 @@ while count < limit:
             link = car.find('a').get('href')
             count+=1
             print(f"We have now checked {count} cars")
-            if check_repeat('cars.db', link):
+            if check_repeat(session, link):
                 print('REPEAT')
                 if count >= limit:
                     break
                 continue
-            conn = sqlite3.connect("cars.db")
-            cursor = conn.cursor()
-            cursor.execute("""
-            INSERT INTO checked (link)
-            VALUES (?)
-            """
-            ,  (link,))
-            conn.commit()
-            conn.close()
+            new_link = Checked(link=link)
+            session.add(new_link)
+            session.commit()
             print(f"Evaluating: {link}")
             proxy  = random.choice(proxy_pool)
             headers = random.choice(header_pool)
@@ -196,14 +158,15 @@ while count < limit:
             }
 
             json_dump = json.dumps(payload)
-
+            
+            
             response = client.models.generate_content(
                 model="gemini-2.0-flash",
                 config=types.GenerateContentConfig(
                     system_instruction=    
                     "You are an expert used car price analyzer. Given specs of a car, provide an estimate for if the car is fair, good, very good, and excellent" \
                     "based on th kelly blue book definitions for each"
-                    "car, if sold in Sacramento, California, 95834, on June 30th 2025"
+                    f"car, if sold in Sacramento, California, 95834, on {datetime.today()}"
                     "PLACE EMPHASIS ON THE CONDITION OF THE CAR"
                     "CHECK WITH KELLY BLUE BOOK"
                     "YOUR OUTPUT HAS TO BE A JSON FILE CONTAINING THE VALUE OF EACH AND THEN AN EXPLANATION SO ONLY 5 VALUES"
@@ -214,19 +177,25 @@ while count < limit:
             time.sleep(4)
             cleaned = ast.literal_eval(response.text.strip('`').strip('json').replace('\n', ''))
             print(cleaned)
-            conn = sqlite3.connect("cars.db")
-            cursor = conn.cursor()
-
-            cursor.execute("""
-            INSERT INTO cars (make, model, trim, miles, sell_price, claimed_condition, excellent_pred, very_good_pred, good_pred, fair_pred, link, explanation, mechanical_issues)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (payload['make'], payload['model'], payload['trim'], payload['miles'], price, payload['condition'], 
-                cleaned['excellent_value'], cleaned['very_good_value'], cleaned['good_value'], cleaned['fair_value'], link, cleaned['explanation'], mechanical_issues))
-
-            conn.commit()
-
-            conn.close()
+            new_car = Car(
+            make=payload['make'],
+            model=payload['model'],
+            trim=payload['trim'],
+            miles=payload['miles'],
+            sell_price=price,
+            claimed_condition=payload['condition'],
+            excellent_pred=cleaned['excellent_value'],
+            very_good_pred=cleaned['very_good_value'],
+            good_pred=cleaned['good_value'],
+            fair_pred=cleaned['fair_value'],
+            link=link,
+            explanation=cleaned['explanation'],
+            mechanical_issues=mechanical_issues
+            )
+            session.add(new_car)
+            session.commit()
             print("ADDED TO DATABASE")
         except Exception as e:
             print(f"An error occurred: {e}")
-print("WE SEARCHED THROUGH {count} DIFFERENT CARS AND ARE NOW DONE")
+print(f"WE SEARCHED THROUGH {count} DIFFERENT CARS AND ARE NOW DONE")
+session.close()
