@@ -20,7 +20,7 @@ init_db()
 load_dotenv()
 delay = random.randint(0,1800)
 print(f"Program will be delayed for {int(delay/60)} minutes to avoid detection")
-time.sleep(delay)
+#time.sleep(delay)
 
 gemini_api   = os.getenv("GEMINI_API_KEY")
 raw_proxies  = json.loads(os.getenv("PROXY_LIST", "[]"))
