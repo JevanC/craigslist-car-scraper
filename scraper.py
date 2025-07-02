@@ -137,7 +137,7 @@ while count < limit:
             body_type = safe_find_text(soup.find('div', class_='attr auto_bodytype'), 'span', class_='valu')
             
             dt_string = safe_find_text(soup.find('section', class_='body'), 'time', class_='date timeago')
-            posted_date = datetime.strptime(dt_string, "%Y-%m-%dT%H:%M")
+            posted_date = datetime.strptime(dt_string, '%Y-%m-%d %H:%M')
 
             response = client.models.generate_content(
                 model="gemini-2.0-flash",
