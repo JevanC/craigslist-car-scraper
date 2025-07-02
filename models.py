@@ -12,6 +12,7 @@ class Car(Base):
     trim = Column(String)
     miles = Column(Integer)
     sell_price = Column(Integer)
+    year = Column(Integer)
     claimed_condition = Column(String)
     excellent_pred = Column(Integer)
     very_good_pred = Column(Integer)
