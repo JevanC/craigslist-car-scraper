@@ -14,6 +14,9 @@ from dotenv import load_dotenv
 from models import Checked, Car
 from db import Session, init_db
 from datetime import datetime
+import smtplib
+from email.message import EmailMessage
+
 
 session = Session()
 init_db()
@@ -218,4 +221,18 @@ while count < limit:
             refresh_session()
 
 print(f"WE SEARCHED THROUGH {count} DIFFERENT CARS AND ARE NOW DONE")
+msg = EmailMessage()
+emails = ['jevanchahal1@gmail.com', 'ramanchhokar@gmail.com']
+
+for email in emails:
+    msg['Subject'] = 'Automatic Email from Craigslist Scraper'
+    msg['From'] = os.getenv('EMAIL_USERNAME')
+    msg['To'] = email
+    msg.set_content(f'{count} new cars have been added to our database!')
+
+    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+        smtp.login(os.getenv('EMAIL_USERNAME'), os.getenv('EMAIL_PASSWORD'))
+        smtp.send_message(msg)
+
+    print("Email sent!")
 session.close()

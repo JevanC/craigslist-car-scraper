@@ -1,9 +1,14 @@
-from bs4 import BeautifulSoup
-import requests
-import pandas as pd
-response = requests.get(
-    "https://proxy.webshare.io/api/v2/proxy/list/?mode=direct&page=1&page_size=25",
-    headers={"Authorization": "Token g7wtr2z46gt7mt2x2c68kaw7yn73b2gi9p5zy9fl"}
-)
- 
-print([f"{i['proxy_address']}:{i['port']}:{i['username']}:{i['password']}" for i in response.json()['results']])
+import smtplib
+from email.message import EmailMessage
+
+msg = EmailMessage()
+msg['Subject'] = 'Test Email from Python'
+msg['From'] = 'jevanchahal1@gmail.com'
+msg['To'] = 'jevanchahal1@gmail.com'
+msg.set_content('This is a plain text email sent using Python!')
+
+with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+    smtp.login('jevanchahal1@gmail.com', 'kkvgjiswpgqzwqcj')
+    smtp.send_message(msg)
+
+print("Email sent!")
