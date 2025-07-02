@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, Text, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, Text, DateTime, func
 from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
@@ -21,6 +21,7 @@ class Car(Base):
     explanation = Column(Text)
     mechanical_issues = Column(Boolean)
     posted_date  = Column(DateTime)
+    added_date = Column(DateTime, default=func.now())
 
 class Checked(Base):
     __tablename__ = 'checked'

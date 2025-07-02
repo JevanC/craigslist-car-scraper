@@ -20,11 +20,15 @@ init_db()
 load_dotenv()
 delay = random.randint(0,1800)
 print(f"Program will be delayed for {int(delay/60)} minutes to avoid detection")
-time.sleep(delay)
+#time.sleep(delay)
 
 gemini_api   = os.getenv("GEMINI_API_KEY")
-raw_proxies  = json.loads(os.getenv("PROXY_LIST", "[]"))
 header_pool  = json.loads(os.getenv("HEADER_POOL_JSON", "[]"))
+response = requests.get(
+    os.getenv('PROXY_URL'),
+    headers={"Authorization": os.getenv('PROXY_TOKEN')}
+)
+raw_proxies = [f"{i['proxy_address']}:{i['port']}:{i['username']}:{i['password']}" for i in response.json()['results']]
 
 client = genai.Client(api_key=gemini_api)
 
@@ -35,6 +39,10 @@ for p in raw_proxies:
     proxy_url = f"http://{user}:{pwd}@{host}:{port}"
     proxy_pool.append({"http": proxy_url, "https": proxy_url})
 
+def refresh_session():
+    global session
+    session.close()
+    session = Session()
 
 def check_repeat(session, url):
     return session.query(Checked).filter_by(link=url).first() is not None
@@ -129,7 +137,7 @@ while count < limit:
             body_type = safe_find_text(soup.find('div', class_='attr auto_bodytype'), 'span', class_='valu')
             
             dt_string = safe_find_text(soup.find('section', class_='body'), 'time', class_='date timeago')
-            posted_date = datetime.strptime(dt_string, "%Y-%m-%dT%H:%M:%S%z")
+            posted_date = datetime.strptime(dt_string, "%Y-%m-%dT%H:%M")
 
             response = client.models.generate_content(
                 model="gemini-2.0-flash",
@@ -201,5 +209,8 @@ while count < limit:
             print("ADDED TO DATABASE")
         except Exception as e:
             print(f"An error occurred: {e}")
+            session.rollback()
+            refresh_session()
+
 print(f"WE SEARCHED THROUGH {count} DIFFERENT CARS AND ARE NOW DONE")
 session.close()
