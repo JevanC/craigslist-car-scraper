@@ -58,7 +58,7 @@ def extract_cylinder_count(text):
 
 
 count = 0
-limit = 200
+limit = 100
 while count < limit:
     URL = f'https://sacramento.craigslist.org/search/cta?purveyor=owner#search=2~gallery~0'
     proxy  = random.choice(proxy_pool)
