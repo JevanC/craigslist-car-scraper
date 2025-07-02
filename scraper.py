@@ -18,7 +18,9 @@ from datetime import datetime
 session = Session()
 init_db()
 load_dotenv()
-
+delay = randint(0,1800)
+print(f"Program will be delayed for {int(delay/60)} minutes to avoid detection")
+time.sleep(delay)
 
 gemini_api   = os.getenv("GEMINI_API_KEY")
 raw_proxies  = json.loads(os.getenv("PROXY_LIST", "[]"))
@@ -62,7 +64,7 @@ while count < limit:
     proxy  = random.choice(proxy_pool)
     headers = random.choice(header_pool)
     soup = BeautifulSoup(requests.get(URL, headers=headers, proxies=proxy).content, 'html.parser')
-    time.sleep(5)
+    time.sleep(random.uniform(15, 25))
     for car in soup.find_all('li', class_= "cl-static-search-result"):
         try:
             link = car.find('a').get('href')
@@ -80,7 +82,7 @@ while count < limit:
             proxy  = random.choice(proxy_pool)
             headers = random.choice(header_pool)
             soup = BeautifulSoup(requests.get(link, headers=headers, proxies=proxy).content, 'html.parser')
-            time.sleep(10)
+            time.sleep(random.uniform(15, 25))
             title = safe_find_text(soup.find('div', class_='attr auto_title_status'), 'span', 'valu')
             if title is None or title.lower() != 'clean':
                 print('NOT CLEAN TITLE')
@@ -139,7 +141,7 @@ while count < limit:
                     temperature=0),
                 contents=[makemodel, postingtitle, postingbody]
             )
-            time.sleep(4)
+            time.sleep(5)
             make, model, trim, mechanical_issues = ast.literal_eval(response.text.strip('`').strip('python').replace('\n', ""))
             print(f"The car is most likely a {make}, {model}, {trim}")
             payload = {
@@ -175,7 +177,7 @@ while count < limit:
                     temperature=0),
                 contents=[json_dump]
             )
-            time.sleep(4)
+            time.sleep(5)
             cleaned = ast.literal_eval(response.text.strip('`').strip('json').replace('\n', ''))
             print(cleaned)
             new_car = Car(
