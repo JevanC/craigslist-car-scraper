@@ -23,4 +23,4 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-      - run: python scrape.py
+      - run: python scraper.py
