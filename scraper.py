@@ -106,7 +106,7 @@ while count < limit:
                 continue
 
             year = safe_find_text(soup.find('div', class_='attr important'), 'span', class_='valu year')
-            if int(year) < 2010:
+            if int(year) < 2000:
                 print('CAR IS TOO OLD')
                 if count >= limit:
                     break
@@ -115,7 +115,7 @@ while count < limit:
 
             miles = safe_find_text(soup.find('div', class_='attr auto_miles'), 'span', class_='valu').replace(',', '')
             miles = int(miles) if miles.isdigit() else 0
-            if miles > 150000:
+            if miles > 200000:
                 print('CAR HAS TOO MANY MILES')
                 if count >= limit:
                     break
