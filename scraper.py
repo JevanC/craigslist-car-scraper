@@ -56,7 +56,7 @@ def extract_cylinder_count(text):
 
 
 count = 0
-limit = 100
+limit = 5
 while count < limit:
     URL = f'https://sacramento.craigslist.org/search/cta?purveyor=owner#search=2~gallery~0'
     proxy  = random.choice(proxy_pool)
@@ -89,7 +89,6 @@ while count < limit:
                     break
                 continue
             price = safe_find_text(soup, 'span', class_='price').replace('$', '').replace(',', '')
-
             if not price.isdigit() or int(price) > 7000:
                 print('MORE THAN $7000')
                 if count >= limit:
@@ -126,7 +125,9 @@ while count < limit:
             transmission = safe_find_text(soup.find('div', class_='attr auto_transmission'), 'span', class_='valu')
             transmission = transmission.capitalize() if transmission else ''
             body_type = safe_find_text(soup.find('div', class_='attr auto_bodytype'), 'span', class_='valu')
-
+            
+            dt_string = safe_find_text(soup.find('section', class_='body'), 'time', class_='date timeago')
+            posted_date = datetime.strptime(dt_string, "%Y-%m-%dT%H:%M:%S%z")
 
             response = client.models.generate_content(
                 model="gemini-2.0-flash",
@@ -190,7 +191,8 @@ while count < limit:
             fair_pred=cleaned['fair_value'],
             link=link,
             explanation=cleaned['explanation'],
-            mechanical_issues=mechanical_issues
+            mechanical_issues=mechanical_issues,
+            posted_date = posted_date
             )
             session.add(new_car)
             session.commit()
