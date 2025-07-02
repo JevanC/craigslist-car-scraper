@@ -18,7 +18,7 @@ from datetime import datetime
 session = Session()
 init_db()
 load_dotenv()
-delay = randint(0,1800)
+delay = random.randint(0,1800)
 print(f"Program will be delayed for {int(delay/60)} minutes to avoid detection")
 time.sleep(delay)
 
