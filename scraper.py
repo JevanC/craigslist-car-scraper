@@ -199,7 +199,9 @@ while count < limit:
                     f"car, if sold in Sacramento, California, 95834, on {datetime.today()}"
                     "PLACE EMPHASIS ON THE CONDITION OF THE CAR"
                     "CHECK WITH KELLY BLUE BOOK"
-                    "YOUR OUTPUT HAS TO BE A JSON FILE CONTAINING THE VALUE OF EACH AND THEN AN EXPLANATION SO ONLY 5 VALUES"
+                    "YOUR OUTPUT HAS TO BE A JSON FILE CONTAINING THE VALUE OF EACH AND THEN AN EXPLANATION SO ONLY 5 VALUES"\
+                    "EACH VALUE OUTPUT SHOULD JUST BE A NUMBER, THE EXPLANATION OUTPUT SHOULD BE YOUR THOUGHTS ON THE CAR, WHAT CONDTION YOU WOULD CLASSIFY IT AS" \
+                    "WHAT YOU THINK THE VALUE IS, AND THEN ANY ADDITONAL NOTES YOU THINK I SHOULD KNOW. THE OUTPUT WILL BE A JSON FILE FORMATTED:"
                     "{excellent_value : ..., very_good_value : ... good_value : ... , fair_value : ..., explanation: ...}",
                     temperature=0),
                 contents=[json_dump]
