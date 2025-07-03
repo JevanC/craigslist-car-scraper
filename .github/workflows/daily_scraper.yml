@@ -12,6 +12,10 @@ jobs:
       GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
       PROXY_LIST:     ${{ secrets.PROXY_LIST }}
       HEADER_POOL_JSON: ${{ secrets.HEADER_POOL_JSON }}
+      PROXY_URL : ${{ secrets.PROXY_URL }}
+      PROXY_TOKEN : ${{ secrets.PROXY_TOKEN }}
+      EMAIL_PASSWORD : ${{ secrets.EMAIL_PASSWORD }}
+      EMAIL_USERNAME : ${{ secrets.EMAIL_USERNAME }}
 
     steps:
       - uses: actions/checkout@v3
