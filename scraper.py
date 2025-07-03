@@ -16,13 +16,23 @@ from db import Session, init_db
 from datetime import datetime
 import smtplib
 from email.message import EmailMessage
-
+import logging
+import sys
 
 session = Session()
 init_db()
 load_dotenv()
+
+logging.basicConfig(
+    level=logging.INFO,                     # 1
+    format='%(asctime)s %(levelname)s %(message)s',  # 2
+    handlers=[
+        logging.StreamHandler(sys.stdout)  # 3
+    ]
+)
+
 delay = random.randint(0,1800)
-print(f"Program will be delayed for {int(delay/60)} minutes to avoid detection")
+logging.info(f"Program will be delayed for {int(delay/60)} minutes to avoid detection")
 #time.sleep(delay)
 
 gemini_api   = os.getenv("GEMINI_API_KEY")
@@ -80,37 +90,36 @@ while count < limit:
         try:
             link = car.find('a').get('href')
             count+=1
-            print(f"We have now checked {count} cars")
+            logging.info(f"We have now checked {count} cars")
             if check_repeat(session, link):
-                print('REPEAT')
+                logging.info(f"CAR HAS ALREADY BEEN CHECKED")
                 if count >= limit:
                     break
                 continue
             new_link = Checked(link=link)
             session.add(new_link)
             session.commit()
-            print(f"Evaluating: {link}")
+            logging.info(f"Evaluating: {link}")
             proxy  = random.choice(proxy_pool)
             headers = random.choice(header_pool)
             soup = BeautifulSoup(requests.get(link, headers=headers, proxies=proxy).content, 'html.parser')
             time.sleep(random.uniform(15, 25))
             title = safe_find_text(soup.find('div', class_='attr auto_title_status'), 'span', 'valu')
             if title is None or title.lower() != 'clean':
-                print('NOT CLEAN TITLE')
-                print(link)
+                logging.info('NOT CLEAN TITLE')
                 if count >= limit:
                     break
                 continue
             price = safe_find_text(soup, 'span', class_='price').replace('$', '').replace(',', '')
             if not price.isdigit() or int(price) > 7000:
-                print('MORE THAN $7000')
+                logging.info("MORE THAN $7000")
                 if count >= limit:
                     break
                 continue
 
             year = safe_find_text(soup.find('div', class_='attr important'), 'span', class_='valu year')
             if int(year) < 2000:
-                print('CAR IS TOO OLD')
+                logging.info('CAR IS TOO OLD')
                 if count >= limit:
                     break
                 continue
@@ -119,7 +128,7 @@ while count < limit:
             miles = safe_find_text(soup.find('div', class_='attr auto_miles'), 'span', class_='valu').replace(',', '')
             miles = int(miles) if miles.isdigit() else 0
             if miles > 200000:
-                print('CAR HAS TOO MANY MILES')
+                logging.info('CAR HAS TOO MANY MILES')
                 if count >= limit:
                     break
                 continue
@@ -127,7 +136,7 @@ while count < limit:
             makemodel = safe_find_text(soup.find('div', class_='attr important'), 'span', class_='valu makemodel').lower()
             
             if not any(brand in makemodel.lower() for brand in ['toyota', 'honda', 'lexus']):
-                print('Not a Japanese Car')
+                logging.info('Not a Japanese Car')
                 if count >= limit:
                     break
                 continue
@@ -158,7 +167,7 @@ while count < limit:
             )
             time.sleep(5)
             make, model, trim, mechanical_issues = ast.literal_eval(response.text.strip('`').strip('python').replace('\n', ""))
-            print(f"The car is most likely a {make}, {model}, {trim}")
+            logging.info(f"The car is most likely a {make}, {model}, {trim}")
             payload = {
                 "api_key": "REVHzhANOzlKNPFu755EGgfbkpqj0mzN",
                 "car_type": "used",
@@ -194,7 +203,6 @@ while count < limit:
             )
             time.sleep(5)
             cleaned = ast.literal_eval(response.text.strip('`').strip('json').replace('\n', ''))
-            print(cleaned)
             new_car = Car(
             make=payload['make'],
             model=payload['model'],
@@ -214,13 +222,13 @@ while count < limit:
             )
             session.add(new_car)
             session.commit()
-            print("ADDED TO DATABASE")
+            logging.info("ADDED TO DATABASE")
         except Exception as e:
-            print(f"An error occurred: {e}")
+            logging.error(f"An error occurred: {e}")
             session.rollback()
             refresh_session()
 
-print(f"WE SEARCHED THROUGH {count} DIFFERENT CARS AND ARE NOW DONE")
+logging.info(f"WE SEARCHED THROUGH {count} DIFFERENT CARS AND ARE NOW DONE")
 msg = EmailMessage()
 emails = ['jevanchahal1@gmail.com', 'ramanchhokar@gmail.com']
 
@@ -233,6 +241,6 @@ for email in emails:
     with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
         smtp.login(os.getenv('EMAIL_USERNAME'), os.getenv('EMAIL_PASSWORD'))
         smtp.send_message(msg)
-
-    print("Email sent!")
+        
+    logging.info("Email sent!")
 session.close()
