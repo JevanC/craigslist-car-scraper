@@ -24,16 +24,16 @@ init_db()
 load_dotenv()
 
 logging.basicConfig(
-    level=logging.INFO,                     # 1
-    format='%(asctime)s %(levelname)s %(message)s',  # 2
+    level=logging.INFO,                     
+    format='%(asctime)s %(levelname)s %(message)s',  
     handlers=[
-        logging.StreamHandler(sys.stdout)  # 3
+        logging.StreamHandler(sys.stdout) 
     ]
 )
 
 delay = random.randint(0,1800)
 logging.info(f"Program will be delayed for {int(delay/60)} minutes to avoid detection")
-#time.sleep(delay)
+time.sleep(delay)
 
 gemini_api   = os.getenv("GEMINI_API_KEY")
 header_pool  = json.loads(os.getenv("HEADER_POOL_JSON", "[]"))
@@ -80,6 +80,9 @@ def extract_cylinder_count(text):
 
 count = 0
 limit = 100
+cars_lst = []
+links_lst = []
+
 while count < limit:
     URL = f'https://sacramento.craigslist.org/search/cta?purveyor=owner#search=2~gallery~0'
     proxy  = random.choice(proxy_pool)
@@ -222,25 +225,47 @@ while count < limit:
             )
             session.add(new_car)
             session.commit()
+            cars_lst.append(new_car.to_dict())
+            links_lst.append(link)
             logging.info("ADDED TO DATABASE")
         except Exception as e:
             logging.error(f"An error occurred: {e}")
             session.rollback()
             refresh_session()
 
+response = client.models.generate_content(
+    model="gemini-2.0-flash",
+    config=types.GenerateContentConfig(
+        system_instruction="You are an expert in sending emails. You are at the tail end of a program that evaluates craigslist listings and tries to find cars of "
+        "value. You will be sending this email to me, twice a day, to let me know that the program has finished running and a list of links to the cars that wre found" \
+        "Be sure to include a link https://docs.google.com/spreadsheets/d/1EFp7_gM1ezfr6yYsEkQOAOvxkLO25wzOZcPDJkok7Lg/edit?gid=1837168154#gid=1837168154 which is the google sheets" \
+        "to our entire database. ALSO USE THE PROVIDED LIST OF COROSPONDING CAR VARIABLES TO HIGHLIGHT WHCIH CARS SHOULD BE FOCUSED ON. ONLY OUTPUT WHAT THE BODY OF THE EMAIL IS. NO SUBJECT LINE"
+        "DO NOT OPEN THE LINKS YOURSELF. ALL PRICE ESTIMATES WERE CREATED BY WHAT GEMINI THOUGHT KBB WOULD SAY. USE YOUR OWN LOGIC IF YOU THINK GEMINI MIGHT BE OFF. MENTION HOW MANY CARS WERE SEARCHED THROUGH" \
+        "MENTION PREDICTED PRICE AND SAY IT IS FROM YOU",
+        temperature=0.0
+    ),
+    contents=[f"""
+        We have looked through {count} different listings and have found the following information.
+
+        Links to the cars:
+        {chr(10).join(links_lst)}
+
+        Car details:
+        {json.dumps(cars_lst, indent=2)}
+        """]
+        )
+
 logging.info(f"WE SEARCHED THROUGH {count} DIFFERENT CARS AND ARE NOW DONE")
 msg = EmailMessage()
-emails = ['jevanchahal1@gmail.com', 'ramanchhokar@gmail.com']
 
-for email in emails:
-    msg['Subject'] = 'Automatic Email from Craigslist Scraper'
-    msg['From'] = os.getenv('EMAIL_USERNAME')
-    msg['To'] = email
-    msg.set_content(f'{count} new cars have been added to our database!')
+msg['Subject'] = 'Automatic Email from Craigslist Scraper'
+msg['From'] = os.getenv('EMAIL_USERNAME')
+msg['To'] = 'jevanchahal1@gmail.com', 'ramanchhokar@gmail.com', 'ss.chhokar@gmail.com'
+msg.set_content(response.text)
 
-    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
-        smtp.login(os.getenv('EMAIL_USERNAME'), os.getenv('EMAIL_PASSWORD'))
-        smtp.send_message(msg)
-        
-    logging.info("Email sent!")
+with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+    smtp.login(os.getenv('EMAIL_USERNAME'), os.getenv('EMAIL_PASSWORD'))
+    smtp.send_message(msg)
+    
+logging.info("Email sent!")
 session.close()

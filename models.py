@@ -24,6 +24,24 @@ class Car(Base):
     posted_date  = Column(DateTime)
     added_date = Column(DateTime, default=func.now())
 
+    def to_dict(self):
+        return {
+            "make": self.make,
+            "model": self.model,
+            "trim": self.trim,
+            "miles": self.miles,
+            "sell_price": self.sell_price,
+            "year":self.year,
+            "claimed_condition": self.claimed_condition,
+            'excellent_pred' : self.excellent_pred,
+            'very_good_pred' : self.very_good_pred,
+            'good_pred' : self.good_pred,
+            'fair_pred' : self.fair_pred,
+            "link": self.link,
+            'explanation' : self.explanation,
+            'mechanical_issues' : self.mechanical_issues
+        }
+
 class Checked(Base):
     __tablename__ = 'checked'
 
