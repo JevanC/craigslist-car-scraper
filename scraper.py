@@ -258,16 +258,20 @@ response = client.models.generate_content(
         )
 
 logging.info(f"WE SEARCHED THROUGH {count} DIFFERENT CARS AND ARE NOW DONE")
-msg = EmailMessage()
 
-msg['Subject'] = 'Automatic Email from Craigslist Scraper'
-msg['From'] = os.getenv('EMAIL_USERNAME')
-msg['To'] = 'jevanchahal1@gmail.com', 'ramanchhokar@gmail.com', 'ss.chhokar@gmail.com'
-msg.set_content(response.text)
+send_email = False
 
-with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
-    smtp.login(os.getenv('EMAIL_USERNAME'), os.getenv('EMAIL_PASSWORD'))
-    smtp.send_message(msg)
+if send_email:
+    msg = EmailMessage()
+
+    msg['Subject'] = 'Automatic Email from Craigslist Scraper'
+    msg['From'] = os.getenv('EMAIL_USERNAME')
+    msg['To'] = 'jevanchahal1@gmail.com', 'ramanchhokar@gmail.com', 'ss.chhokar@gmail.com'
+    msg.set_content(response.text)
     
-logging.info("Email sent!")
+    with smtplib.SMTP_SSL('smtp.gmail.com', 465) as smtp:
+        smtp.login(os.getenv('EMAIL_USERNAME'), os.getenv('EMAIL_PASSWORD'))
+        smtp.send_message(msg)
+    
+    logging.info("Email sent!")
 session.close()
