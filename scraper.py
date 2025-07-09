@@ -33,7 +33,7 @@ logging.basicConfig(
 
 delay = random.randint(0,1800)
 logging.info(f"Program will be delayed for {int(delay/60)} minutes to avoid detection")
-#time.sleep(delay)
+time.sleep(delay)
 
 gemini_api   = os.getenv("GEMINI_API_KEY")
 header_pool  = json.loads(os.getenv("HEADER_POOL_JSON", "[]"))
@@ -65,7 +65,7 @@ def delete_old_listing(session, header_pool, proxy_pool):
         else:
             logging.info(f'{old_cars_make} {old_cars_model} LISTING IS STILL ACTIVE')
         time.sleep(random.uniform(15, 25))
-        
+
 delete_old_listing(session, header_pool, proxy_pool)
 
 def refresh_session():
