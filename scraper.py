@@ -30,7 +30,7 @@ logging.basicConfig(
 
 delay = random.randint(0,1800)
 logging.info(f"Program will be delayed for {int(delay/60)} minutes to avoid detection")
-#time.sleep(delay)
+time.sleep(delay)
 
 gemini_api   = os.getenv("GEMINI_API_KEY")
 header_pool  = json.loads(os.getenv("HEADER_POOL_JSON", "[]"))
@@ -58,13 +58,13 @@ def delete_old_listing(session, header_pool, proxy_pool):
     headers = random.choice(header_pool)
     deleted = False
     for old_car in session.query(Car).all():
-        soup = BeautifulSoup(requests.get(old_car['link'], headers=headers, proxies=proxy).content, 'html.parser')
+        soup = BeautifulSoup(requests.get(old_car.link, headers=headers, proxies=proxy).content, 'html.parser')
         if soup.find('div', class_='removed') is not None:
-            logging.info(f'{old_car['year']} {old_car['make']} {old_car['model']} LISTING EXPIRED')
+            logging.info(f'{old_car.year} {old_car.make} {old_car.model} LISTING EXPIRED')
             session.delete(old_car)
             deleted = True
         else:
-            logging.info(f'{old_car['year']} {old_car['make']} {old_car['model']} LISTING IS STILL ACTIVE')
+            logging.info(f'{old_car.year} {old_car.make} {old_car.model} LISTING IS STILL ACTIVE')
         time.sleep(random.uniform(15, 25))
     if deleted:
         session.commit()

@@ -60,17 +60,4 @@ def safe_find_text(parent, tag, class_=None, id_=None, default=''):
     return default
 
 
-proxy  = random.choice(proxy_pool)
-headers = random.choice(header_pool)
 
-for old_car, old_link in session.query(Car, Car.link).all():
-    soup = BeautifulSoup(requests.get(old_link, headers=headers, proxies=proxy).content, 'html.parser')
-    if soup.find('div', class_='removed') is not None:
-        print('LISTING EXPIRED')
-        session.delete(old_car)
-        session.commit()
-    else:
-        print('LISTING IS STILL ACTIVE')
-    time.sleep(5)
-
-session.close()
