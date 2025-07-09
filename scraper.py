@@ -33,7 +33,7 @@ logging.basicConfig(
 
 delay = random.randint(0,1800)
 logging.info(f"Program will be delayed for {int(delay/60)} minutes to avoid detection")
-time.sleep(delay)
+#time.sleep(delay)
 
 gemini_api   = os.getenv("GEMINI_API_KEY")
 header_pool  = json.loads(os.getenv("HEADER_POOL_JSON", "[]"))
@@ -51,6 +51,22 @@ for p in raw_proxies:
     host, port, user, pwd = p.split(":")
     proxy_url = f"http://{user}:{pwd}@{host}:{port}"
     proxy_pool.append({"http": proxy_url, "https": proxy_url})
+
+def delete_old_listing(session, header_pool, proxy_pool):
+    proxy  = random.choice(proxy_pool)
+    headers = random.choice(header_pool)
+
+    for old_car, old_link, old_cars_make, old_cars_model in session.query(Car, Car.link, Car.make, Car.model).all():
+        soup = BeautifulSoup(requests.get(old_link, headers=headers, proxies=proxy).content, 'html.parser')
+        if soup.find('div', class_='removed') is not None:
+            logging.info(f'{old_cars_make} {old_cars_model} LISTING EXPIRED')
+            session.delete(old_car)
+            session.commit()
+        else:
+            logging.info(f'{old_cars_make} {old_cars_model} LISTING IS STILL ACTIVE')
+        time.sleep(random.uniform(15, 25))
+        
+delete_old_listing(session, header_pool, proxy_pool)
 
 def refresh_session():
     global session
