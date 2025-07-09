@@ -19,7 +19,7 @@ from email.message import EmailMessage
 import logging
 import sys
 
-
+init_db()
 logging.basicConfig(
     level=logging.INFO,                     
     format='%(asctime)s %(levelname)s %(message)s',  
@@ -51,12 +51,16 @@ for p in raw_proxies:
 
 load_dotenv()
 
-def delete_old_listing(session, header_pool, proxy_pool):
+def delete_old_listing(header_pool, proxy_pool):
     proxy  = random.choice(proxy_pool)
     headers = random.choice(header_pool)
     deleted = False
     cars_to_delete = set()
-    for old_car in session.query(Car).all():
+
+    with Session() as session:
+        current_database = session.query(Car).all()
+
+    for old_car in current_database:
         soup = BeautifulSoup(requests.get(old_car.link, headers=headers, proxies=proxy).content, 'html.parser')
         if soup.find('div', class_='removed') is not None:
             logging.info(f'{old_car.year} {old_car.make} {old_car.model} LISTING EXPIRED')
@@ -65,21 +69,20 @@ def delete_old_listing(session, header_pool, proxy_pool):
         else:
             logging.info(f'{old_car.year} {old_car.make} {old_car.model} LISTING IS STILL ACTIVE')
         time.sleep(random.uniform(15, 25))
-    init_db()
+
     if deleted:
-        session = Session()
-        try:
-            for delete in cars_to_delete:
-                session.delete(delete)
-            session.commit()
-        except Exception as e:
-            logging.error(e)
-            refresh_session()
-        session.close()
+        with Session() as session:
+            try:
+                for delete in cars_to_delete:
+                    session.delete(delete)
+                session.commit()
+            except Exception as e:
+                logging.error(e)
+                session.rollback()
 
+
+delete_old_listing(header_pool, proxy_pool)
 session = Session()
-delete_old_listing(session, header_pool, proxy_pool)
-
 def refresh_session():
     global session
     session.close()
